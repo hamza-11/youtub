@@ -1,5 +1,6 @@
 import streamlit as st
 import yt_dlp
+import os
 
 def download_video(link, file_type, cookies_str=None):
     ydl_opts = {
@@ -14,7 +15,7 @@ def download_video(link, file_type, cookies_str=None):
         }]
 
     if cookies_str:
-        ydl_opts['cookiefile'] = 'cookies.txt' # سيتم حفظ المحتوى في ملف مؤقت
+        ydl_opts['cookiefile'] = 'cookies.txt'
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -22,7 +23,18 @@ def download_video(link, file_type, cookies_str=None):
                 with open('cookies.txt', 'w') as f:
                     f.write(cookies_str)
             ydl.download([link])
-        return f"تم تنزيل الملف بنجاح: {link}"
+
+        # بعد التحميل، إنشاء رابط للتنزيل
+        file_name = ydl.prepare_filename({'title': ydl.extract_info(link, download=False)['title'], 'ext': 'mp3' if file_type == 'MP3' else 'mp4'})
+        with open(file_name, 'rb') as f:
+            file_data = f.read()
+        st.download_button(
+            label=f"تنزيل {os.path.basename(file_name)}",
+            data=file_data,
+            file_name=os.path.basename(file_name),
+            mime="audio/mpeg" if file_type == "MP3" else "video/mp4",
+        )
+        return f"تم إنشاء رابط تنزيل لـ: {link}"
     except Exception as e:
         return f"حدث خطأ أثناء التحميل: {str(e)}"
 
