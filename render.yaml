@@ -1,0 +1,10 @@
+version: 1
+build:
+  services:
+    - type: web
+      name: your-app-name  # استبدل باسم تطبيقك
+      env: python
+      buildCommand: |
+        apt-get update
+        apt-get install -y ffmpeg
+      startCommand: streamlit run app.py
