@@ -22,22 +22,18 @@ def download_video(link, file_type, cookies_str=None):
             if cookies_str:
                 with open('cookies.txt', 'w') as f:
                     f.write(cookies_str)
-            info_dict = ydl.extract_info(link, download=True)
-            file_name = ydl.prepare_filename(info_dict)
+            ydl.download([link])
 
         # بعد التحميل، إنشاء رابط للتنزيل
+        file_name = ydl.prepare_filename({'title': ydl.extract_info(link, download=False)['title'], 'ext': 'mp3' if file_type == 'MP3' else 'mp4'})
         with open(file_name, 'rb') as f:
             file_data = f.read()
-        
-        # تنزيل الملف تلقائيًا
         st.download_button(
             label=f"تنزيل {os.path.basename(file_name)}",
             data=file_data,
             file_name=os.path.basename(file_name),
             mime="audio/mpeg" if file_type == "MP3" else "video/mp4",
-            key=f"download_{file_name}",
         )
-        
         return f"تم إنشاء رابط تنزيل لـ: {link}"
     except Exception as e:
         return f"حدث خطأ أثناء التحميل: {str(e)}"
