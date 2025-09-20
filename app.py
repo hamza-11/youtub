@@ -42,13 +42,16 @@ def download_video(link, file_type, cookies_file=None):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(link, download=True)
 
-            # اسم الملف النهائي (MP3 أو MP4)
-            if 'requested_downloads' in info:
-                file_name = info['requested_downloads'][0]['filepath']
-            else:
-                file_ext = 'mp3' if file_type == 'MP3' else info.get("ext", "mp4")
-                file_name = ydl.prepare_filename({'title': info['title'], 'ext': file_ext})
+            # اسم الملف الأساسي المتوقع
+            base_filename = ydl.prepare_filename(info)
 
+            # التحقق من الامتداد النهائي
+            if file_type == "MP3":
+                file_name = os.path.splitext(base_filename)[0] + ".mp3"
+            else:
+                file_name = base_filename
+
+        # التأكد من وجود الملف النهائي
         if os.path.exists(file_name):
             with open(file_name, 'rb') as f:
                 file_data = f.read()
@@ -60,7 +63,7 @@ def download_video(link, file_type, cookies_file=None):
             )
             return f"✅ تم إنشاء رابط تنزيل لـ: {link}"
         else:
-            return f"⚠️ لم أجد الملف بعد التحميل."
+            return f"⚠️ لم أجد الملف بعد التحويل."
 
     except Exception as e:
         return f"❌ حدث خطأ أثناء التحميل: {str(e)}"
