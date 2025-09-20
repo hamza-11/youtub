@@ -2,7 +2,7 @@ import streamlit as st
 import yt_dlp
 import os
 
-def download_video(link, file_type, cookies_str=None):
+def download_video(link, file_type, cookies_file=None):
     progress_text = st.empty()
     progress_bar = st.progress(0)
 
@@ -35,15 +35,11 @@ def download_video(link, file_type, cookies_str=None):
     else:
         ydl_opts['format'] = 'bestvideo+bestaudio/best'
 
-    if cookies_str:
-        ydl_opts['cookiefile'] = 'cookies.txt'
+    if cookies_file:
+        ydl_opts['cookiefile'] = cookies_file
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            if cookies_str:
-                with open('cookies.txt', 'w', encoding="utf-8") as f:
-                    f.write(cookies_str)
-
             info = ydl.extract_info(link, download=True)
             file_ext = 'mp3' if file_type == 'MP3' else info.get("ext", "mp4")
             file_name = ydl.prepare_filename({'title': info['title'], 'ext': file_ext})
@@ -87,7 +83,7 @@ st.markdown("""
 
 st.title("📥 برنامج تحميل فيديوهات يوتيوب")
 st.markdown("""
-<span style="color: orange;">**هام:**</span> لتجاوز مشكلة التحقق من أنك لست روبوتًا، يمكنك إدخال ملفات تعريف الارتباط الخاصة بك من يوتيوب أدناه.
+<span style="color: orange;">**هام:**</span> لتجاوز مشكلة الفيديوهات الخاصة أو المحمية، يمكنك رفع ملف **cookies.txt** من حسابك في يوتيوب.
 """, unsafe_allow_html=True)
 
 st.write("أدخل روابط الفيديوهات أدناه (رابط في كل سطر) واختر الصيغة المطلوبة.")
@@ -97,14 +93,21 @@ st.markdown("""
 ### 📝 التعليمات:
 1. الصق روابط الفيديوهات من يوتيوب في المربع أدناه (رابط واحد في كل سطر).
 2. اختر الصيغة المطلوبة: **MP3** للصوت أو **MP4** للفيديو.
-3. يمكنك إدخال ملفات تعريف الارتباط الخاصة بك (اختياريًا) لتجاوز مشاكل التحقق.  
+3. يمكنك رفع ملف **cookies.txt** (اختياريًا) لتجاوز مشاكل الفيديوهات الخاصة.  
 4. اضغط على زر **تحميل** لبدء التحميل.
 """, unsafe_allow_html=True)
 
 # إدخال البيانات
 links = st.text_area("روابط YouTube", placeholder="الصق الروابط هنا...")
 file_type = st.selectbox("اختر الصيغة", ["MP3", "MP4"])
-cookies_input = st.text_area("إدخال ملفات تعريف الارتباط (اختياري)", placeholder="الصق محتوى ملف تعريف الارتباط هنا...")
+
+cookies_file_upload = st.file_uploader("رفع ملف cookies.txt (اختياري)", type=["txt"])
+cookies_file_path = None
+
+if cookies_file_upload:
+    cookies_file_path = "cookies.txt"
+    with open(cookies_file_path, "wb") as f:
+        f.write(cookies_file_upload.getbuffer())
 
 # زر التحميل
 download_button = st.button("تحميل الفيديوهات")
@@ -114,7 +117,7 @@ if download_button:
         links_list = links.strip().split("\n")
         for link in links_list:
             st.write(f"🔗 جاري التحميل من: {link}")
-            status = download_video(link.strip(), file_type, cookies_input)
+            status = download_video(link.strip(), file_type, cookies_file_path)
             st.write(status)
     else:
         st.warning("⚠️ يرجى إدخال روابط صحيحة.")
