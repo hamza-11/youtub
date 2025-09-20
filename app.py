@@ -3,9 +3,26 @@ import yt_dlp
 import os
 
 def download_video(link, file_type, cookies_str=None):
-    # خيارات yt-dlp
+    progress_text = st.empty()
+    progress_bar = st.progress(0)
+
+    def my_hook(d):
+        if d['status'] == 'downloading':
+            percent = d.get('_percent_str', '0%').replace('%','')
+            try:
+                percent = float(percent)
+                progress_bar.progress(int(percent))
+                progress_text.text(f"⬇️ جارِ تحميل: {percent:.1f}%")
+            except:
+                pass
+        elif d['status'] == 'finished':
+            progress_text.text("✅ اكتمل التحميل، جارِ التحويل...")
+            progress_bar.progress(100)
+
+    # إعدادات yt-dlp
     ydl_opts = {
         'outtmpl': '%(title)s.%(ext)s',
+        'progress_hooks': [my_hook],
     }
 
     if file_type == "MP3":
@@ -16,7 +33,6 @@ def download_video(link, file_type, cookies_str=None):
             'preferredquality': '192',
         }]
     else:
-        # الفيديو: نحاول نجيب أفضل فيديو + أفضل صوت، وإذا ما توفر يرجع إلى best
         ydl_opts['format'] = 'bestvideo+bestaudio/best'
 
     if cookies_str:
@@ -24,17 +40,14 @@ def download_video(link, file_type, cookies_str=None):
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # كتابة الكوكيز إذا موجودة
             if cookies_str:
                 with open('cookies.txt', 'w', encoding="utf-8") as f:
                     f.write(cookies_str)
 
-            # التحميل
             info = ydl.extract_info(link, download=True)
             file_ext = 'mp3' if file_type == 'MP3' else info.get("ext", "mp4")
             file_name = ydl.prepare_filename({'title': info['title'], 'ext': file_ext})
 
-        # قراءة الملف وإعداد زر التحميل
         if os.path.exists(file_name):
             with open(file_name, 'rb') as f:
                 file_data = f.read()
@@ -84,7 +97,7 @@ st.markdown("""
 ### 📝 التعليمات:
 1. الصق روابط الفيديوهات من يوتيوب في المربع أدناه (رابط واحد في كل سطر).
 2. اختر الصيغة المطلوبة: **MP3** للصوت أو **MP4** للفيديو.
-3. يمكنك إدخال ملفات تعريف الارتباط الخاصة بك (اختياريًا) لتجاوز مشاكل التحقق. Get cookies.txt LOCALLY.
+3. يمكنك إدخال ملفات تعريف الارتباط الخاصة بك (اختياريًا) لتجاوز مشاكل التحقق.  
 4. اضغط على زر **تحميل** لبدء التحميل.
 """, unsafe_allow_html=True)
 
@@ -98,9 +111,9 @@ download_button = st.button("تحميل الفيديوهات")
 
 if download_button:
     if links.strip():
-        st.write("⏳ جارِ تحميل الفيديوهات...")
         links_list = links.strip().split("\n")
         for link in links_list:
+            st.write(f"🔗 جاري التحميل من: {link}")
             status = download_video(link.strip(), file_type, cookies_input)
             st.write(status)
     else:
