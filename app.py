@@ -41,8 +41,13 @@ def download_video(link, file_type, cookies_file=None):
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(link, download=True)
-            file_ext = 'mp3' if file_type == 'MP3' else info.get("ext", "mp4")
-            file_name = ydl.prepare_filename({'title': info['title'], 'ext': file_ext})
+
+            # اسم الملف النهائي (MP3 أو MP4)
+            if 'requested_downloads' in info:
+                file_name = info['requested_downloads'][0]['filepath']
+            else:
+                file_ext = 'mp3' if file_type == 'MP3' else info.get("ext", "mp4")
+                file_name = ydl.prepare_filename({'title': info['title'], 'ext': file_ext})
 
         if os.path.exists(file_name):
             with open(file_name, 'rb') as f:
@@ -61,7 +66,8 @@ def download_video(link, file_type, cookies_file=None):
         return f"❌ حدث خطأ أثناء التحميل: {str(e)}"
 
 
-# واجهة المستخدم
+# ================== واجهة المستخدم ==================
+
 st.set_page_config(page_title="برنامج تحميل فيديوهات يوتيوب", layout="wide")
 
 st.markdown("""
